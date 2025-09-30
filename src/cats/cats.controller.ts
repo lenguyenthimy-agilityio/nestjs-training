@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
 import { CatsService } from './cats.service';
 import type { Cat } from '../interfaces/cat.interface';
 
@@ -18,5 +18,15 @@ export class CatsController {
   @Get(':name')
   getOneCat(@Param('name') name: string): Cat {
     return this.catsService.getOneCat(name);
+  }
+
+  @Put(':name')
+  updateCat(@Param('name') name: string, @Body() updatedCat: Partial<Cat>): Cat {
+    return this.catsService.updateCat(name, updatedCat);
+  }
+
+  @Delete(':name')
+  deleteCat(@Param('name') name: string): void {
+    return this.catsService.deleteCat(name);
   }
 }

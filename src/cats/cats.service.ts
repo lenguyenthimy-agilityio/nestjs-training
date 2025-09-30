@@ -18,4 +18,21 @@ export class CatsService {
     }
     return foundCat;
   }
+
+  updateCat(name: string, updatedCat: Partial<Cat>): Cat {
+    const catIndex = this.cats.findIndex((cat) => cat.name === name);
+    if (catIndex === -1) {
+      throw new Error(`Cat with name "${name}" not found`);
+    }
+    this.cats[catIndex] = { ...this.cats[catIndex], ...updatedCat };
+    return this.cats[catIndex];
+  }
+
+  deleteCat(name: string): void {
+    const catIndex = this.cats.findIndex((cat) => cat.name === name);
+    if (catIndex === -1) {
+      throw new Error(`Cat with name "${name}" not found`);
+    }
+    this.cats.splice(catIndex, 1);
+  }
 }
