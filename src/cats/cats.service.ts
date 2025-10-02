@@ -1,38 +1,40 @@
-import { Injectable } from '@nestjs/common';
-import { Cat } from '../interfaces/cat.interface';
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Cat } from './entities/cat.entity'; // Update this import to your Cat entity
 
 @Injectable()
 export class CatsService {
-  private readonly cats: Cat[] = [];
-  create(cat: Cat) {
-    this.cats.push(cat);
-  }
-  findAll(): Cat[] {
-    return this.cats;
+  constructor(
+    @InjectRepository(Cat)
+    private readonly catRepository: Repository<Cat>,
+  ) {}
+
+  async create(cat: Partial<Cat>): Promise<Cat> {
+    const newCat = this.catRepository.create(cat);
+    return this.catRepository.save(newCat);
   }
 
-  getOneCat(name: string): Cat {
-    const foundCat = this.cats.find((cat) => cat.name === name);
+  async findAll(): Promise<Cat[]> {
+    return this.catRepository.find();
+  }
+
+  async getOneCat(id: number): Promise<Cat> {
+    const foundCat = await this.catRepository.findOne({ where: { id } });
     if (!foundCat) {
-      throw new Error(`Cat with name "${name}" not found`);
+      throw new NotFoundException(`Cat with id "${id}" not found`);
     }
     return foundCat;
   }
 
-  updateCat(name: string, updatedCat: Partial<Cat>): Cat {
-    const catIndex = this.cats.findIndex((cat) => cat.name === name);
-    if (catIndex === -1) {
-      throw new Error(`Cat with name "${name}" not found`);
-    }
-    this.cats[catIndex] = { ...this.cats[catIndex], ...updatedCat };
-    return this.cats[catIndex];
+  async updateCat(id: number, updatedCat: Partial<Cat>): Promise<Cat> {
+    const cat = await this.getOneCat(id);
+    Object.assign(cat, updatedCat);
+    return this.catRepository.save(cat);
   }
 
-  deleteCat(name: string): void {
-    const catIndex = this.cats.findIndex((cat) => cat.name === name);
-    if (catIndex === -1) {
-      throw new Error(`Cat with name "${name}" not found`);
-    }
-    this.cats.splice(catIndex, 1);
+  async deleteCat(id: number): Promise<void> {
+    const cat = await this.getOneCat(id);
+    await this.catRepository.remove(cat);
   }
 }

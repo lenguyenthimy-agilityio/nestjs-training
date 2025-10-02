@@ -1,32 +1,33 @@
-import { Controller, Get, Post, Put, Delete, Body, Param } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe } from '@nestjs/common';
 import { CatsService } from './cats.service';
-import type { Cat } from '../interfaces/cat.interface';
+import { Cat } from './entities/cat.entity'; // Corrected import path
 
 @Controller('cats')
 export class CatsController {
   constructor(private readonly catsService: CatsService) {}
+
   @Post()
-  create(@Body() cat: Cat) {
-    this.catsService.create(cat);
+  async create(@Body() cat: Partial<Cat>): Promise<Cat> {
+    return this.catsService.create(cat);
   }
 
   @Get()
-  findAll(): Cat[] {
+  async findAll(): Promise<Cat[]> {
     return this.catsService.findAll();
   }
 
-  @Get(':name')
-  getOneCat(@Param('name') name: string): Cat {
-    return this.catsService.getOneCat(name);
+  @Get(':id')
+  async findOne(@Param('id', ParseIntPipe) id: number): Promise<Cat> {
+    return this.catsService.getOneCat(id);
   }
 
-  @Put(':name')
-  updateCat(@Param('name') name: string, @Body() updatedCat: Partial<Cat>): Cat {
-    return this.catsService.updateCat(name, updatedCat);
+  @Put(':id')
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updatedCat: Partial<Cat>): Promise<Cat> {
+    return this.catsService.updateCat(id, updatedCat);
   }
 
-  @Delete(':name')
-  deleteCat(@Param('name') name: string): void {
-    return this.catsService.deleteCat(name);
+  @Delete(':id')
+  async remove(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    await this.catsService.deleteCat(id);
   }
 }
