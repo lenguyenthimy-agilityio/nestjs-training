@@ -1,14 +1,16 @@
 import { Controller, Get, Post, Put, Delete, Body, Param, ParseIntPipe } from '@nestjs/common';
 import { CatsService } from './cats.service';
 import { Cat } from './entities/cat.entity'; // Corrected import path
+import { CreateCatDto } from './dto/create-cat.dto';
+import { UpdateCatDto } from './dto/update-cat.dto';
 
 @Controller('cats')
 export class CatsController {
   constructor(private readonly catsService: CatsService) {}
 
   @Post()
-  async create(@Body() cat: Partial<Cat>): Promise<Cat> {
-    return this.catsService.create(cat);
+  async create(@Body() createCatDto: CreateCatDto): Promise<Cat> {
+    return this.catsService.create(createCatDto);
   }
 
   @Get()
@@ -22,7 +24,7 @@ export class CatsController {
   }
 
   @Put(':id')
-  async update(@Param('id', ParseIntPipe) id: number, @Body() updatedCat: Partial<Cat>): Promise<Cat> {
+  async update(@Param('id', ParseIntPipe) id: number, @Body() updatedCat: UpdateCatDto): Promise<Cat> {
     return this.catsService.updateCat(id, updatedCat);
   }
 

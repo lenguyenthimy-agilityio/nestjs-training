@@ -25,7 +25,7 @@ import { CatsModule } from './cats/cats.module';
         password: configService.get<string>('database.pass'),
         database: configService.get<string>('database.name'),
         autoLoadEntities: true, // auto-detect entities
-        synchronize: true,      // ⚠️ auto-create schema (not for production)
+        synchronize: false;      // ⚠️ auto-create schema (not for production)
       }),
     }),
 

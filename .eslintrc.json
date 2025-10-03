@@ -1,0 +1,10 @@
+{
+  "overrides": [
+    {
+      "files": ["*.dto.ts"],
+      "rules": {
+        "@typescript-eslint/no-unsafe-call": "off"
+      }
+    }
+  ]
+}
