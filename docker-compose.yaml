@@ -3,16 +3,16 @@ version: '3.8'
 services:
   postgres:
     image: postgres:15
-    container_name: postgres_local
+    container_name: my_postgres
     restart: always
     ports:
       - "5432:5432"
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: catsdb
+      POSTGRES_DB: catsdb_v2
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_v2:/var/lib/postgresql/data
 
 volumes:
-  postgres_data:
+  postgres_data_v2:
