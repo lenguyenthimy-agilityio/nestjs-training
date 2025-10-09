@@ -4,6 +4,8 @@ import { ConfigModule } from '@nestjs/config';
 import { CatsModule } from './cats/cats.module';
 import { DatabaseModule } from './database/database.module';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -12,6 +14,8 @@ import { LoggerMiddleware } from './common/middleware/logger.middleware';
     }),
     DatabaseModule,
     CatsModule,
+    AuthModule,
+    UsersModule,
   ],
 })
 export class AppModule implements NestModule {
