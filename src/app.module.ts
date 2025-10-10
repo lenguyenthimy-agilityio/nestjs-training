@@ -6,6 +6,9 @@ import { DatabaseModule } from './database/database.module';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { APP_GUARD } from '@nestjs/core';
+import { RolesGuard } from './users/roles.guard';
+import { AuthGuard } from './auth/auth.guard';
 
 @Module({
   imports: [
@@ -16,6 +19,16 @@ import { UsersModule } from './users/users.module';
     CatsModule,
     AuthModule,
     UsersModule,
+  ],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: RolesGuard,
+    },
   ],
 })
 export class AppModule implements NestModule {
