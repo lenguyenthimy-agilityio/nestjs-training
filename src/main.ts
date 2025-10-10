@@ -15,7 +15,7 @@ async function bootstrap() {
       transform: true, // auto-converts types (string -> number)
     }),
   );
-  app.useGlobalFilters(new HttpExceptionFilter());
+  // app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new ResponseInterceptor());
   await app.listen(3000);
 }

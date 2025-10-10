@@ -3,7 +3,8 @@ import { AuthService } from './auth.service';
 import { AuthGuard } from './auth.guard';
 import { SignInDto } from './dto/sign-in.dto';
 import { Public } from './decorators/public.decorator';
-
+import { JwtPayload } from './types/jwt-auth.type';
+import { RequestWithUser } from './types/jwt-auth.type';
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
@@ -17,7 +18,7 @@ export class AuthController {
 
   @UseGuards(AuthGuard)
   @Get('profile')
-  getProfile(@Request() req) {
+  getProfile(@Request() req: RequestWithUser): JwtPayload {
     return req.user;
   }
 }

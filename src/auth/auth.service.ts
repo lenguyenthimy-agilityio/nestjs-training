@@ -11,13 +11,13 @@ export class AuthService {
 
   async signIn(username: string, pass: string): Promise<{ access_token: string }> {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-    const user = await this.usersService.findOne(username);
+    const user = await this.usersService.findOneByUsername(username);
     // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
     if (user?.password !== pass) {
       throw new UnauthorizedException();
     }
     // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
-    const payload = { sub: user.userId, username: user.username, role: user.role };
+    const payload = { sub: user.id, username: user.username, role: user.role };
     return {
       access_token: await this.jwtService.signAsync(payload),
     };

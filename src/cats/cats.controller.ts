@@ -16,7 +16,7 @@ export class CatsController {
   }
 
   @Get()
-  @Roles(Role.Admin) // Example of role-based access control
+  @Roles(Role.ADMIN) // Example of role-based access control
   async findAll(): Promise<Cat[]> {
     return this.catsService.findAll();
   }
