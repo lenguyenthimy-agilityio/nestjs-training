@@ -5,6 +5,18 @@ import { DataSource, DataSourceOptions } from 'typeorm';
 config(); // Load .env variables
 
 export const getTypeOrmConfig = async (configService: ConfigService): Promise<DataSourceOptions> => {
+  const isTest = process.env.NODE_ENV === 'test';
+
+  if (isTest) {
+    // ✅ In-memory database for testing (no external DB needed)
+    return {
+      type: 'sqlite',
+      database: ':memory:',
+      dropSchema: true,
+      entities: [__dirname + '/../**/entities/*.entity{.ts,.js}'],
+      synchronize: true,
+    };
+  }
   return Promise.resolve({
     type: 'postgres',
     host: configService.get<string>('DB_HOST'),
