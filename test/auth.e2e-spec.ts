@@ -1,13 +1,26 @@
-// test/auth.e2e-spec.ts
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { createTestApp, mockUsersService } from './utils/test-app.factory';
+import * as bcrypt from 'bcrypt';
+import { createTestApp } from './utils/test-app.factory';
+import { UsersService } from '../src/users/users.service';
 
 describe('Auth E2E (Mocked)', () => {
   let app: INestApplication;
+  let mockUsersService: Partial<UsersService>;
 
   beforeAll(async () => {
-    app = await createTestApp();
+    mockUsersService = {
+      findOneByUsername: jest.fn(async (username: string) => {
+        if (username === 'john') {
+          // Password hash for 'changeme'
+          const hashed = await bcrypt.hash('changeme', 10);
+          return { id: 1, username: 'john', password: hashed, role: 'user' };
+        }
+        return null;
+      }),
+    };
+
+    app = await createTestApp([{ provide: UsersService, useValue: mockUsersService }]);
   });
 
   afterAll(async () => {
@@ -19,12 +32,12 @@ describe('Auth E2E (Mocked)', () => {
       .post('/auth/login')
       .send({ username: 'john', password: 'changeme' })
       .expect(201);
-
+    console.log('Login Response Body:', response.body); // Debugging line
     expect(response.body.access_token).toBeDefined();
   });
 
   it('should reject invalid credentials', async () => {
-    mockUsersService.findOneByUsername.mockResolvedValueOnce(null);
+    // mockUsersService.findOneByUsername = jest.fn().mockResolvedValueOnce(null);
 
     const response = await request(app.getHttpServer())
       .post('/auth/login')
@@ -39,7 +52,6 @@ describe('Auth E2E (Mocked)', () => {
       .post('/auth/login')
       .send({ username: 'john', password: 'changeme' })
       .expect(201);
-
     const token = loginResponse.body.access_token;
 
     const profileResponse = await request(app.getHttpServer())
