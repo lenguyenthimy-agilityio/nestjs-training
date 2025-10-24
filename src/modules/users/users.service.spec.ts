@@ -4,8 +4,9 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { SignupDto } from '../auth/dto/signup.dto';
+import { UpdateUserRoleDto } from './dto/update-user-role.dto';
 import * as bcrypt from 'bcrypt';
-import { ConflictException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
 
 describe('UsersService', () => {
   let usersService: UsersService;
@@ -100,6 +101,47 @@ describe('UsersService', () => {
       const result = await usersService.findByEmail(email);
       expect(result).toBeNull();
       expect(findOneSpy).toHaveBeenCalledWith({ where: { email } });
+    });
+  });
+  // test for updateRole
+  describe('updateRole', () => {
+    it('should update the user role', async () => {
+      const userId = '1';
+      const dto: UpdateUserRoleDto = { role: 'admin' } as unknown as UpdateUserRoleDto;
+
+      const existingUser = {
+        id: userId,
+        email: 'example@gmail.com',
+        password: 'hashedPassword',
+        role: 'user',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as User;
+
+      const findOneSpy = jest.spyOn(usersRepository, 'findOne').mockResolvedValue(existingUser);
+      const saveSpy = jest.spyOn(usersRepository, 'save').mockImplementation(async (user) => user as User);
+
+      const result = await usersService.updateRole(userId, dto);
+
+      expect(findOneSpy).toHaveBeenCalledWith({ where: { id: userId } });
+      expect(saveSpy).toHaveBeenCalled();
+
+      expect(result.role).toBe(dto.role);
+    });
+
+    it('should throw NotFoundException if user does not exist', async () => {
+      const userId = '1';
+      const dto: UpdateUserRoleDto = { role: 'ADMIN' };
+
+      jest.spyOn(usersRepository, 'findOne').mockResolvedValue(null);
+
+      // Correct Jest pattern for async errors
+      await expect(usersService.updateRole(userId, dto)).rejects.toBeInstanceOf(NotFoundException);
+
+      await expect(usersService.updateRole(userId, dto)).rejects.toThrow(`User with ID ${userId} not found`);
+
+      // Ensure repository called correctly
+      expect(usersRepository.findOne).toHaveBeenCalledWith({ where: { id: userId } });
     });
   });
 
