@@ -1,18 +1,125 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UsersService } from './users.service';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { User } from './entities/user.entity';
+import { Repository } from 'typeorm';
+import { SignupDto } from '../auth/dto/signup.dto';
+import * as bcrypt from 'bcrypt';
+import { ConflictException } from '@nestjs/common';
 
 describe('UsersService', () => {
-  let service: UsersService;
+  let usersService: UsersService;
+  let usersRepository: Repository<User>;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [UsersService],
+      providers: [
+        UsersService,
+        {
+          provide: getRepositoryToken(User),
+          useClass: Repository,
+        },
+      ],
     }).compile();
 
-    service = module.get<UsersService>(UsersService);
+    usersService = module.get<UsersService>(UsersService);
+    usersRepository = module.get<Repository<User>>(getRepositoryToken(User));
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
+  describe('create', () => {
+    it('should create a new user with hashed password', async () => {
+      const dto: SignupDto = { email: 'example@gmail.com', password: 'password' };
+
+      const findOneSpy = jest.spyOn(usersRepository, 'findOne').mockResolvedValue(null);
+      const createSpy = jest.spyOn(usersRepository, 'create').mockImplementation((user) => user as User);
+      const saveSpy = jest.spyOn(usersRepository, 'save').mockImplementation(
+        async (user) =>
+          ({
+            ...user,
+            id: '1',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          }) as User,
+      );
+
+      const result = await usersService.create(dto);
+
+      expect(findOneSpy).toHaveBeenCalledWith({ where: { email: dto.email } });
+      expect(createSpy).toHaveBeenCalled();
+      expect(saveSpy).toHaveBeenCalled();
+
+      expect(result).toHaveProperty('id');
+      expect(result.email).toBe(dto.email);
+      expect(result.password).not.toBe(dto.password); // Password should be hashed
+
+      const isMatch = await bcrypt.compare(dto.password, result.password);
+      expect(isMatch).toBe(true);
+    });
+
+    it('should throw ConflictException if email already exists', async () => {
+      const dto: SignupDto = { email: 'example@gmail.com', password: 'password' };
+
+      const findOneSpy = jest.spyOn(usersRepository, 'findOne').mockResolvedValue({
+        id: '1',
+        email: dto.email,
+        password: 'hashedPassword',
+        role: 'user',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as User);
+
+      await expect(usersService.create(dto)).rejects.toThrow(ConflictException);
+      expect(findOneSpy).toHaveBeenCalledWith({ where: { email: dto.email } });
+    });
+  });
+
+  describe('findByEmail', () => {
+    it('should return a user by email', async () => {
+      const email = 'example@gmail.com';
+
+      const findOneSpy = jest.spyOn(usersRepository, 'findOne').mockResolvedValue({
+        id: '1',
+        email: email,
+        password: 'hashedPassword',
+        role: 'user',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as User);
+
+      const result = await usersService.findByEmail(email);
+      expect(result).toHaveProperty('id');
+      expect(result.email).toBe(email);
+      expect(findOneSpy).toHaveBeenCalledWith({ where: { email } });
+    });
+
+    it('should return null if user not found', async () => {
+      const email = 'example@gmail.com';
+
+      const findOneSpy = jest.spyOn(usersRepository, 'findOne').mockResolvedValue(null);
+
+      const result = await usersService.findByEmail(email);
+      expect(result).toBeNull();
+      expect(findOneSpy).toHaveBeenCalledWith({ where: { email } });
+    });
+  });
+
+  describe('findAll', () => {
+    it('should return an array of users', async () => {
+      jest.spyOn(usersRepository, 'find').mockResolvedValue([
+        {
+          id: '1',
+          email: 'example@gmail.com',
+          password: 'hashedPassword',
+          role: 'user',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as User,
+      ]);
+
+      const result = await usersService.findAll();
+      expect(result).toBeInstanceOf(Array);
+      expect(result).toHaveLength(1);
+      expect(usersRepository.find).toHaveBeenCalled();
+    });
   });
 });

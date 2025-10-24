@@ -16,7 +16,7 @@ export class User {
   password: string;
 
   @Column({
-    type: 'enum',
+    type: process.env.NODE_ENV === 'test' ? 'text' : 'enum',
     enum: Role,
     default: Role.USER,
   })
