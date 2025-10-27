@@ -1,29 +1,29 @@
-// import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, CreateDateColumn, UpdateDateColumn } from 'typeorm';
 // import { CartItem } from '../../cart-items/entities/cart-item.entity';
 
-// @Entity('products')
-// export class Product {
-//   @PrimaryGeneratedColumn('uuid')
-//   id: string;
+@Entity('products')
+export class Product {
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-//   @Column({ unique: true })
-//   name: string;
+  @Column({ unique: true })
+  name: string;
 
-//   @Column({ type: 'decimal', precision: 10, scale: 2 })
-//   price: number;
+  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  price: number;
 
-//   @Column({ type: 'text', nullable: true })
-//   description: string;
+  @Column({ type: 'text', nullable: true })
+  description: string;
 
-//   @Column({ type: 'int', default: 0 })
-//   stock: number;
+  @Column({ type: 'int', default: 0 })
+  stock: number;
 
-//   @OneToMany(() => CartItem, (item) => item.product)
-//   cartItems: CartItem[];
+  // @OneToMany(() => CartItem, (item) => item.product)
+  // cartItems: CartItem[];
 
-//   @CreateDateColumn()
-//   createdAt: Date;
+  @CreateDateColumn()
+  createdAt: Date;
 
-//   @UpdateDateColumn()
-//   updatedAt: Date;
-// }
+  @UpdateDateColumn()
+  updatedAt: Date;
+}

@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthModule } from './modules/auth/auth.module';
@@ -9,6 +9,7 @@ import { CartItemsModule } from './modules/cart-items/cart-items.module';
 import { ProductsModule } from './modules/products/products.module';
 import { RolesGuard } from './modules/users/roles.guard';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
+import { LoggerMiddleware } from './common/middleware/logger.middleware';
 
 @Module({
   imports: [
@@ -33,4 +34,8 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
     },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
+}

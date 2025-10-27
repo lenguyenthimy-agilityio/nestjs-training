@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
@@ -7,6 +7,8 @@ import { User } from '../users/entities/user.entity';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
@@ -22,6 +24,9 @@ export class AuthService {
 
     // Don’t return password hash
     const { password: _, ...result } = user;
+
+    this.logger.log(`User validated: ${email}`);
+
     return result as User;
   }
 

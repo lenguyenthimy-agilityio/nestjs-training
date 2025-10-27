@@ -1,0 +1,50 @@
+import { Controller, Post, Body, HttpCode, HttpStatus, Get, Query, Patch, Param } from '@nestjs/common';
+import { ProductsService } from './products.service';
+import { CreateProductDto } from './dto/create-product.dto';
+import { ApiBearerAuth, ApiTags, ApiCreatedResponse, ApiQuery } from '@nestjs/swagger';
+import { Roles } from '../users/decorators/roles.decorator';
+import { Role } from '../users/enums/role.enum';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { UpdateProductDto } from './dto/update-product.dto';
+
+@ApiTags('Products')
+@Controller('products')
+export class ProductsController {
+  constructor(private readonly productsService: ProductsService) {}
+
+  @Post()
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.CREATED)
+  @ApiCreatedResponse({ description: 'Product successfully created.' })
+  async create(@Body() dto: CreateProductDto) {
+    return this.productsService.create(dto);
+  }
+
+  @Get()
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiQuery({ name: 'name', required: false, type: String, description: 'Search by product name' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Limit number of results' })
+  @ApiQuery({ name: 'offset', required: false, type: Number, description: 'Offset for pagination' })
+  findAll(@Query() paginationQuery: PaginationQueryDto, @Query('name') name?: string) {
+    console.log('Name filter:', name);
+    return this.productsService.findAll(paginationQuery, name);
+  }
+
+  @Get(':id')
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiQuery({ name: 'id', required: true, type: String, description: 'Product ID' })
+  async findOne(@Param('id') id: string) {
+    return this.productsService.findOne(id);
+  }
+
+  @Patch(':id')
+  @Roles(Role.ADMIN)
+  @ApiBearerAuth()
+  @ApiQuery({ name: 'id', required: true, type: String, description: 'Product ID' })
+  async update(@Param('id') id: string, @Body() dto: UpdateProductDto) {
+    return this.productsService.update(id, dto);
+  }
+}

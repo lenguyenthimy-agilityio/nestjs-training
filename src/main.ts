@@ -4,7 +4,9 @@ import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    logger: ['error', 'warn', 'log', 'verbose', 'debug'],
+  });
 
   // ✅ Enable global serialization
   // @Exclude() decorator usage in entities/DTOs
