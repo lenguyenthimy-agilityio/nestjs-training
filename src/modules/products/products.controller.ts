@@ -1,10 +1,10 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, Get, Query, Patch, Param } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus, Get, Delete, Query, Patch, Param } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
-import { ApiBearerAuth, ApiTags, ApiCreatedResponse, ApiQuery } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags, ApiCreatedResponse, ApiQuery, ApiNoContentResponse } from '@nestjs/swagger';
 import { Roles } from '../users/decorators/roles.decorator';
 import { Role } from '../users/enums/role.enum';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { GetProductsDto } from './dto/get-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
 @ApiTags('Products')
@@ -27,9 +27,8 @@ export class ProductsController {
   @ApiQuery({ name: 'name', required: false, type: String, description: 'Search by product name' })
   @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Limit number of results' })
   @ApiQuery({ name: 'offset', required: false, type: Number, description: 'Offset for pagination' })
-  findAll(@Query() paginationQuery: PaginationQueryDto, @Query('name') name?: string) {
-    console.log('Name filter:', name);
-    return this.productsService.findAll(paginationQuery, name);
+  findAll(@Query() query: GetProductsDto) {
+    return this.productsService.findAll(query);
   }
 
   @Get(':id')
@@ -46,5 +45,14 @@ export class ProductsController {
   @ApiQuery({ name: 'id', required: true, type: String, description: 'Product ID' })
   async update(@Param('id') id: string, @Body() dto: UpdateProductDto) {
     return this.productsService.update(id, dto);
+  }
+
+  @Delete('/:id')
+  @ApiBearerAuth()
+  @Roles(Role.ADMIN)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiNoContentResponse({ description: 'Product successfully deleted.' })
+  async delete(@Param('id') id: string) {
+    await this.productsService.delete(id);
   }
 }

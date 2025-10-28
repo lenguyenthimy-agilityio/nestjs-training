@@ -33,7 +33,7 @@ export class UsersService {
     const user = this.usersRepository.create({
       email: email,
       password: hashed,
-      role: Role.ADMIN, // For testing purposes, set all new users as ADMIN
+      role: Role.USER,
     });
 
     return this.usersRepository.save(user);

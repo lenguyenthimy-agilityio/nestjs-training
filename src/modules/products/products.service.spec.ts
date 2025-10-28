@@ -1,4 +1,3 @@
-// create unit test for ProductsService
 import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsService } from './products.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -68,28 +67,89 @@ describe('ProductsService', () => {
   // Additional tests for findAll, findOne, and update
   describe('findAll', () => {
     it('should return paginated products', async () => {
-      const paginationDto: PaginationQueryDto = { limit: 10, offset: 0 };
-
+      const dto: PaginationQueryDto = { limit: 2, offset: 0 };
       const products: Product[] = [
-        { id: '1', name: 'Product A', description: 'Desc A', price: 100, stock: 0, createdAt: new Date(), updatedAt: new Date() },
-        { id: '2', name: 'Product B', description: 'Desc B', price: 200, stock: 0, createdAt: new Date(), updatedAt: new Date() },
+        {
+          id: '1',
+          name: 'Product A',
+          description: 'Desc A',
+          price: 100,
+          stock: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: '2',
+          name: 'Product B',
+          description: 'Desc B',
+          price: 200,
+          stock: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
       ];
 
-      jest.spyOn(productsRepository, 'find').mockResolvedValue(products);
+      jest.spyOn(productsRepository, 'findAndCount').mockResolvedValue([products, 5]);
 
-      const result = await productsService.findAll(paginationDto);
+      const result = await productsService.findAll(dto);
 
-      expect(productsRepository.find).toHaveBeenCalledWith({
-        skip: paginationDto.offset,
-        take: paginationDto.limit,
+      expect(productsRepository.findAndCount).toHaveBeenCalledWith({
+        where: {},
+        skip: dto.offset,
+        take: dto.limit,
+        order: { createdAt: 'DESC' },
       });
-      expect(result).toEqual(products);
+
+      expect(result.data).toEqual(products);
+      expect(result.total).toBe(5);
+      expect(result.limit).toBe(dto.limit);
+      expect(result.offset).toBe(dto.offset);
+    });
+    it('should return filtered products by name', async () => {
+      const dto: PaginationQueryDto = { limit: 2, offset: 0 };
+      const nameFilter = 'Product A';
+      const products: Product[] = [
+        {
+          id: '1',
+          name: 'Product A',
+          description: 'Desc A',
+          price: 100,
+          stock: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      jest.spyOn(productsRepository, 'findAndCount').mockResolvedValue([products, 1]);
+
+      const result = await productsService.findAll({ ...dto, name: nameFilter });
+
+      // eslint-disable-next-line @typescript-eslint/unbound-method
+      expect(productsRepository.findAndCount).toHaveBeenCalledWith({
+        where: { name: Like(`%${nameFilter}%`) },
+        skip: dto.offset,
+        take: dto.limit,
+        order: { createdAt: 'DESC' },
+      });
+
+      expect(result.data).toEqual(products);
+      expect(result.total).toBe(1);
+      expect(result.limit).toBe(dto.limit);
+      expect(result.offset).toBe(dto.offset);
     });
   });
 
   describe('findOne', () => {
     it('should return a product by id', async () => {
-      const product: Product = { id: '1', name: 'Product A', description: 'Desc A', price: 100, stock: 0, createdAt: new Date(), updatedAt: new Date() };
+      const product: Product = {
+        id: '1',
+        name: 'Product A',
+        description: 'Desc A',
+        price: 100,
+        stock: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
       jest.spyOn(productsRepository, 'findOne').mockResolvedValue(product);
 
@@ -108,13 +168,21 @@ describe('ProductsService', () => {
 
   describe('update', () => {
     it('should update a product', async () => {
-      const existingProduct: Product = { id: '1', name: 'Product A', description: 'Desc A', price: 100, stock: 0, createdAt: new Date(), updatedAt: new Date() };
+      const existingProduct: Product = {
+        id: '1',
+        name: 'Product A',
+        description: 'Desc A',
+        price: 100,
+        stock: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
       const updateDto: UpdateProductDto = { name: 'Product A Updated', price: 150 };
 
       jest.spyOn(productsRepository, 'findOne').mockResolvedValue(existingProduct);
-      const saveSpy = jest.spyOn(productsRepository, 'save').mockImplementation(
-        async (product) => ({ ...existingProduct, ...product }) as Product,
-      );
+      const saveSpy = jest
+        .spyOn(productsRepository, 'save')
+        .mockImplementation(async (product) => ({ ...existingProduct, ...product }) as Product);
 
       const result = await productsService.update('1', updateDto);
 
@@ -131,6 +199,33 @@ describe('ProductsService', () => {
       jest.spyOn(productsRepository, 'findOne').mockResolvedValue(null);
 
       await expect(productsService.update('1', updateDto)).rejects.toThrow(NotFoundException);
+    });
+  });
+  describe('delete', () => {
+    it('should delete a product by id', async () => {
+      const existingProduct: Product = {
+        id: '1',
+        name: 'Product A',
+        description: 'Desc A',
+        price: 100,
+        stock: 0,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      jest.spyOn(productsRepository, 'findOne').mockResolvedValue(existingProduct);
+      const removeSpy = jest.spyOn(productsRepository, 'remove').mockResolvedValue(existingProduct);
+
+      await productsService.delete('1');
+
+      expect(productsRepository.findOne).toHaveBeenCalledWith({ where: { id: '1' } });
+      expect(removeSpy).toHaveBeenCalledWith(existingProduct);
+    });
+
+    it('should throw NotFoundException if product to delete not found', async () => {
+      jest.spyOn(productsRepository, 'findOne').mockResolvedValue(null);
+
+      await expect(productsService.delete('1')).rejects.toThrow(NotFoundException);
     });
   });
 });

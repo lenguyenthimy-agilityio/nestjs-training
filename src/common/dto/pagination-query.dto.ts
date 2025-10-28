@@ -13,8 +13,4 @@ export class PaginationQueryDto {
   @IsInt()
   @IsPositive()
   limit?: number = 10; // number of items per page
-
-  // @IsOptional()
-  // @IsString()
-  // name?: string;
 }

@@ -3,7 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Like, Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { CreateProductDto } from './dto/create-product.dto';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { GetProductsDto } from './dto/get-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 
 @Injectable()
@@ -22,8 +22,9 @@ export class ProductsService {
     const product = this.productRepository.create(dto);
     return this.productRepository.save(product);
   }
-  async findAll(paginationQuery: PaginationQueryDto, name?: string) {
-    const { limit, offset } = paginationQuery;
+
+  async findAll(query: GetProductsDto) {
+    const { limit, offset, name } = query;
 
     const where = name ? { name: Like(`%${name}%`) } : {};
 
@@ -58,5 +59,14 @@ export class ProductsService {
 
     Object.assign(product, updateProductDto);
     return this.productRepository.save(product);
+  }
+
+  async delete(id: string): Promise<void> {
+    const product = await this.productRepository.findOne({ where: { id } });
+    if (!product) {
+      throw new NotFoundException(`Product with ID ${id} not found`);
+    }
+
+    await this.productRepository.remove(product);
   }
 }
