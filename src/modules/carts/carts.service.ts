@@ -8,6 +8,8 @@ import { AddCartItemDto } from './dto/add-cart-item.dto';
 import { User } from '../users/entities/user.entity';
 import { CartItemResponseDto } from '../cart-items/dto/cart-item-response.dto';
 import { plainToInstance } from 'class-transformer';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { PaginationMeta } from '../../common/interfaces/pagination-meta.interface';
 
 @Injectable()
 export class CartsService {
@@ -89,5 +91,50 @@ export class CartsService {
     }
 
     await this.cartItemRepo.remove(item);
+  }
+
+  // Get all cart items with pagination
+  async getCartItems(
+    user: User,
+    pagination: PaginationQueryDto,
+  ): Promise<{ data: CartItemResponseDto[]; pagination: PaginationMeta }> {
+    const { limit = 10, offset = 0 } = pagination;
+
+    const cart = await this.cartRepo.findOne({
+      where: { user: { id: user.id } },
+    });
+
+    if (!cart) {
+      return {
+        data: [],
+        pagination: { total: 0, limit, offset },
+      };
+    }
+
+    const [items, total] = await this.cartItemRepo.findAndCount({
+      where: { cart: { id: cart.id } },
+      relations: ['product'],
+      order: { createdAt: 'DESC' },
+      skip: offset,
+      take: limit,
+    });
+
+    const data = plainToInstance(
+      CartItemResponseDto,
+      items.map((item) => ({
+        id: item.id,
+        userId: user.id,
+        productId: item.product.id,
+        quantity: item.quantity,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt,
+      })),
+      { excludeExtraneousValues: true },
+    );
+
+    return {
+      data,
+      pagination: { total, limit, offset },
+    };
   }
 }
