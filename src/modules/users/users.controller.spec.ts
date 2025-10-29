@@ -29,10 +29,10 @@ describe('UsersController', () => {
 
   describe('updateRole', () => {
     it('should update the user role and return updated user data', async () => {
-      const userId = '1';
+      const id = '1';
       const dto: UpdateUserRoleDto = { role: Role.ADMIN };
       const updatedUser = {
-        id: userId,
+        id: id,
         email: 'example@gmail.com',
         role: Role.ADMIN,
         updatedAt: new Date(),
@@ -40,9 +40,9 @@ describe('UsersController', () => {
 
       jest.spyOn(usersService, 'updateRole').mockResolvedValue(updatedUser as any);
 
-      const result = await usersController.updateRole(userId, dto);
+      const result = await usersController.updateRole(id, dto);
 
-      expect(usersService.updateRole).toHaveBeenCalledWith(userId, dto);
+      expect(usersService.updateRole).toHaveBeenCalledWith(id, dto);
       expect(result).toEqual({
         id: updatedUser.id,
         email: updatedUser.email,
@@ -52,15 +52,15 @@ describe('UsersController', () => {
     });
 
     it('should throw NotFoundException if user does not exist', async () => {
-      const userId = 'nonexistent-id';
+      const id = 'nonexistent-id';
       const dto: UpdateUserRoleDto = { role: Role.USER };
 
-      jest.spyOn(usersService, 'updateRole').mockRejectedValue(new NotFoundException(`User with ID ${userId} not found`));
+      jest.spyOn(usersService, 'updateRole').mockRejectedValue(new NotFoundException(`User with ID ${id} not found`));
 
-      await expect(usersController.updateRole(userId, dto)).rejects.toBeInstanceOf(NotFoundException);
-      await expect(usersController.updateRole(userId, dto)).rejects.toThrow(`User with ID ${userId} not found`);
+      await expect(usersController.updateRole(id, dto)).rejects.toBeInstanceOf(NotFoundException);
+      await expect(usersController.updateRole(id, dto)).rejects.toThrow(`User with ID ${id} not found`);
 
-      expect(usersService.updateRole).toHaveBeenCalledWith(userId, dto);
+      expect(usersService.updateRole).toHaveBeenCalledWith(id, dto);
     });
   });
 });
