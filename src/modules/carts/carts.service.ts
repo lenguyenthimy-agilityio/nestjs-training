@@ -10,6 +10,8 @@ import { CartItemResponseDto } from '../cart-items/dto/cart-item-response.dto';
 import { plainToInstance } from 'class-transformer';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { PaginationMeta } from '../../common/interfaces/pagination-meta.interface';
+import { CacheHelperService } from '../../common/cache/cache-helper.service';
+import { CACHE_TTL } from '../../common/cache/constant';
 
 @Injectable()
 export class CartsService {
@@ -20,18 +22,19 @@ export class CartsService {
     private readonly cartItemRepo: Repository<CartItem>,
     @InjectRepository(Product)
     private readonly productRepo: Repository<Product>,
+    private readonly cacheHelper: CacheHelperService, // ✅ inject cache helper
   ) {}
+
+  private getCartCacheKey(userId: string, limit: number, offset: number) {
+    return `cart:${userId}:items:${limit}:${offset}`;
+  }
 
   async addItem(user: User, dto: AddCartItemDto): Promise<CartItemResponseDto> {
     const { productId, quantity } = dto;
 
-    // Ensure product exists
     const product = await this.productRepo.findOne({ where: { id: productId } });
-    if (!product) {
-      throw new NotFoundException('Product not found');
-    }
+    if (!product) throw new NotFoundException('Product not found');
 
-    // Ensure user has a cart
     let cart = await this.cartRepo.findOne({
       where: { user: { id: user.id } },
       relations: ['items', 'items.product'],
@@ -42,7 +45,6 @@ export class CartsService {
       await this.cartRepo.save(cart);
     }
 
-    // Check if product already exists in cart
     const existingItem = cart.items.find((i) => i.product.id === productId);
 
     let savedItem: CartItem;
@@ -51,15 +53,13 @@ export class CartsService {
       existingItem.quantity += quantity;
       savedItem = await this.cartItemRepo.save(existingItem);
     } else {
-      const newItem = this.cartItemRepo.create({
-        cart,
-        product,
-        quantity,
-      });
+      const newItem = this.cartItemRepo.create({ cart, product, quantity });
       savedItem = await this.cartItemRepo.save(newItem);
     }
 
-    // Transform entity → response DTO
+    // Invalidate cart caches for this user
+    await this.cacheHelper.deleteByPattern(`cart:${user.id}:items:*`);
+
     return plainToInstance(
       CartItemResponseDto,
       {
@@ -74,7 +74,6 @@ export class CartsService {
     );
   }
 
-  // Remove Item from Cart
   async removeItem(user: User, cartItemId: string): Promise<void> {
     const item = await this.cartItemRepo.findOne({
       where: { id: cartItemId },
@@ -91,24 +90,32 @@ export class CartsService {
     }
 
     await this.cartItemRepo.remove(item);
+    // Invalidate cart caches for this user
+    await this.cacheHelper.deleteByPattern(`cart:${user.id}:items:*`);
   }
 
-  // Get all cart items with pagination
   async getCartItems(
     user: User,
     pagination: PaginationQueryDto,
   ): Promise<{ data: CartItemResponseDto[]; pagination: PaginationMeta }> {
     const { limit = 10, offset = 0 } = pagination;
+    const cacheKey = this.getCartCacheKey(user.id, limit, offset);
 
-    const cart = await this.cartRepo.findOne({
-      where: { user: { id: user.id } },
-    });
+    // Try cache first
+    const cached = await this.cacheHelper.get<{
+      data: CartItemResponseDto[];
+      pagination: PaginationMeta;
+    }>(cacheKey);
 
+    if (cached) {
+      console.log(`Returning cart items for user ${user.id} from cache`);
+      return cached;
+    }
+
+    // If no cache, query database
+    const cart = await this.cartRepo.findOne({ where: { user: { id: user.id } } });
     if (!cart) {
-      return {
-        data: [],
-        pagination: { total: 0, limit, offset },
-      };
+      return { data: [], pagination: { total: 0, limit, offset } };
     }
 
     const [items, total] = await this.cartItemRepo.findAndCount({
@@ -132,9 +139,13 @@ export class CartsService {
       { excludeExtraneousValues: true },
     );
 
-    return {
-      data,
-      pagination: { total, limit, offset },
-    };
+    const result = { data, pagination: { total, limit, offset } };
+
+    console.log(`Returning cart items for user ${user.id} from database`);
+
+    // Cache the result for CACHE_TTL seconds
+    await this.cacheHelper.set(cacheKey, result, CACHE_TTL);
+
+    return result;
   }
 }

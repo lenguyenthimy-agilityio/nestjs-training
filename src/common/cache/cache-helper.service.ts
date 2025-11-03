@@ -7,7 +7,6 @@ export class CacheHelperService {
 
   async set(key: string, value: any, ttlSeconds?: number) {
     const serialized = JSON.stringify(value);
-    console.log(`[CACHE] Setting key: ${key}`);
     if (ttlSeconds) {
       await this.redisClient.set(key, serialized, 'EX', ttlSeconds);
     } else {
