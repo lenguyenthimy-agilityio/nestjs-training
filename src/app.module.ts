@@ -1,7 +1,5 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { CacheModule } from '@nestjs/cache-manager';
-import { redisStore } from 'cache-manager-redis-yet';
+import { ConfigModule, ConfigService } from '@nestjs/config';;
 import { APP_GUARD } from '@nestjs/core';
 
 import { AuthModule } from './modules/auth/auth.module';

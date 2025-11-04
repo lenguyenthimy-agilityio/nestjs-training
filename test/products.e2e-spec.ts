@@ -4,17 +4,21 @@ import { DataSource } from 'typeorm';
 import { createTestingApp } from './jest.setup';
 import { Role } from '../src/modules/users/enums/role.enum';
 import { User } from '../src/modules/users/entities/user.entity';
+import Redis from 'ioredis';
 
 describe('Products (e2e)', () => {
   let app: INestApplication;
   let dataSource: DataSource;
+  let redisClient: Redis;
   let server: any;
   let adminToken: string;
   let userToken: string;
   let createdProductId: string;
 
   beforeAll(async () => {
-    app = await createTestingApp();
+    const setup = await createTestingApp();
+    app = setup.app;
+    redisClient = setup.redisClient;
     server = app.getHttpServer();
     dataSource = app.get(DataSource);
 
@@ -48,6 +52,12 @@ describe('Products (e2e)', () => {
   });
 
   afterAll(async () => {
+    if (redisClient && redisClient.status === 'ready') {
+      console.log('Closing Redis connection...');
+      await redisClient.quit();
+    }
+
+    await dataSource.destroy();
     await app.close();
   });
 

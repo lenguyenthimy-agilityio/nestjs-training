@@ -8,13 +8,15 @@ import { User } from '../src/modules/users/entities/user.entity';
 describe('Users (e2e) - Update Role', () => {
   let app: INestApplication;
   let dataSource: DataSource;
+  let redisClient: Redis;
   let server: any;
   let adminToken: string;
   let normalUserId: string;
 
   beforeAll(async () => {
-    app = await createTestingApp();
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    const setup = await createTestingApp();
+    app = setup.app;
+    redisClient = setup.redisClient;
     server = app.getHttpServer();
     dataSource = app.get(DataSource);
 
@@ -46,6 +48,12 @@ describe('Users (e2e) - Update Role', () => {
   });
 
   afterAll(async () => {
+    if (redisClient && redisClient.status === 'ready') {
+      console.log('Closing Redis connection...');
+      await redisClient.quit();
+    }
+
+    await dataSource.destroy();
     await app.close();
   });
 

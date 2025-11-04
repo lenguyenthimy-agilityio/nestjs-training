@@ -1,14 +1,17 @@
 import { INestApplication } from '@nestjs/common';
 import request from 'supertest';
+import Redis from 'ioredis';
 import { createTestingApp } from './jest.setup';
 
 describe('Auth E2E (SQLite)', () => {
   let app: INestApplication;
+  let redisClient: Redis;
 
   const user = { email: 'test@example.com', password: 'Abcd@1234' };
 
   beforeAll(async () => {
-    app = await createTestingApp();
+    const setup = await createTestingApp();
+    app = setup.app;
   });
 
   afterAll(async () => {

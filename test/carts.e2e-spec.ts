@@ -4,19 +4,23 @@ import request from 'supertest';
 import { createTestingApp } from './jest.setup';
 import { Product } from '../src/modules/products/entities/product.entity';
 import { CartItem } from '../src/modules/cart-items/entities/cart-item.entity';
+import Redis from 'ioredis';
 
 describe('Carts (e2e)', () => {
   let app: INestApplication;
   let dataSource: DataSource;
+  let redisClient: Redis;
   let server: any;
   let accessToken: string;
   let testProduct: Product;
 
   beforeAll(async () => {
-    app = await createTestingApp();
-    dataSource = app.get(DataSource);
-    await app.init();
+    const setup = await createTestingApp();
+    app = setup.app;
+    redisClient = setup.redisClient;
     server = app.getHttpServer();
+    dataSource = app.get(DataSource);
+
 
     // Create a test user
     await request(server).post('/auth/signup').send({ email: 'john@example.com', password: 'Abcd@1234' }).expect(201);
@@ -40,6 +44,12 @@ describe('Carts (e2e)', () => {
   });
 
   afterAll(async () => {
+    if (redisClient && redisClient.status === 'ready') {
+      console.log('Closing Redis connection...');
+      await redisClient.quit();
+    }
+
+    await dataSource.destroy();
     await app.close();
   });
 

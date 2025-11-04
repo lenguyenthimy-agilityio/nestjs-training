@@ -92,9 +92,13 @@
       "^.+\\.(t|j)s$": "ts-jest"
     },
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.(t|j)s",
+      "!**/migrations/**",
+      "!**/node_modules/**",
+      "!**/dist/**"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "coverageReporters": ["text", "lcov", "json", "clover"]
   }
 }
