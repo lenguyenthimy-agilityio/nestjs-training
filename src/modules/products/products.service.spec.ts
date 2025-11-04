@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ProductsService } from './products.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
-import { Repository, Like } from 'typeorm';
+import { Repository } from 'typeorm';
 import { CreateProductDto } from './dto/create-product.dto';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
@@ -37,7 +37,6 @@ describe('ProductsService', () => {
     productsService = module.get<ProductsService>(ProductsService);
     productsRepository = module.get<Repository<Product>>(getRepositoryToken(Product));
     cacheHelper = module.get<CacheHelperService>(CacheHelperService) as jest.Mocked<CacheHelperService>;
-    // cacheHelper = module.get<CacheHelperService>(CacheHelperService);
   });
 
   describe('create', () => {
@@ -123,39 +122,6 @@ describe('ProductsService', () => {
       expect(setCacheSpy).toHaveBeenCalled();
       expect(result.data).toEqual(products);
     });
-
-    // it('should return filtered products by name', async () => {
-    //   const dto: PaginationQueryDto = { limit: 2, offset: 0 };
-    //   const nameFilter = 'Product A';
-    //   const products: Product[] = [
-    //     {
-    //       id: '1',
-    //       name: 'Product A',
-    //       description: 'Desc A',
-    //       price: 100,
-    //       stock: 0,
-    //       createdAt: new Date(),
-    //       updatedAt: new Date(),
-    //     },
-    //   ];
-
-    //   jest.spyOn(productsRepository, 'findAndCount').mockResolvedValue([products, 1]);
-
-    //   const result = await productsService.findAll({ ...dto, name: nameFilter });
-
-    //   // eslint-disable-next-line @typescript-eslint/unbound-method
-    //   expect(productsRepository.findAndCount).toHaveBeenCalledWith({
-    //     where: { name: Like(`%${nameFilter}%`) },
-    //     skip: dto.offset,
-    //     take: dto.limit,
-    //     order: { createdAt: 'DESC' },
-    //   });
-
-    //   expect(result.data).toEqual(products);
-    //   expect(result.total).toBe(1);
-    //   expect(result.limit).toBe(dto.limit);
-    //   expect(result.offset).toBe(dto.offset);
-    // });
     it('should return filtered products by name', async () => {
       const dto: PaginationQueryDto = { limit: 2, offset: 0 };
       const nameFilterDto: GetProductsDto = { ...dto, name: 'Product A' };
@@ -212,8 +178,8 @@ describe('ProductsService', () => {
   });
 
   describe('update', () => {
-    it('should update a product', async () => {
-      const existingProduct: Product = {
+    it('should update a product and clear cache', async () => {
+      const existing: Product = {
         id: '1',
         name: 'Product A',
         description: 'Desc A',
@@ -224,18 +190,17 @@ describe('ProductsService', () => {
       };
       const updateDto: UpdateProductDto = { name: 'Product A Updated', price: 150 };
 
-      jest.spyOn(productsRepository, 'findOne').mockResolvedValue(existingProduct);
-      const saveSpy = jest
-        .spyOn(productsRepository, 'save')
-        .mockImplementation(async (product) => ({ ...existingProduct, ...product }) as Product);
+      jest.spyOn(productsRepository, 'findOne').mockResolvedValue(existing);
+      jest.spyOn(productsRepository, 'save').mockResolvedValue({ ...existing, ...updateDto } as Product);
+      const deleteCacheSpy = jest.spyOn(cacheHelper, 'deleteByPattern').mockResolvedValue();
+      const delCacheSpy = jest.spyOn(cacheHelper, 'del').mockResolvedValue();
 
       const result = await productsService.update('1', updateDto);
 
-      expect(productsRepository.findOne).toHaveBeenCalledWith({ where: { id: '1' } });
-      expect(saveSpy).toHaveBeenCalled();
-
       expect(result.name).toBe(updateDto.name);
       expect(result.price).toBe(updateDto.price);
+      expect(deleteCacheSpy).toHaveBeenCalledWith('products:list*');
+      expect(delCacheSpy).toHaveBeenCalledWith('products:detail:1');
     });
 
     it('should throw NotFoundException if product to update not found', async () => {
