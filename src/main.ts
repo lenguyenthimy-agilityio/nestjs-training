@@ -1,11 +1,16 @@
 import { NestFactory, Reflector } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
+import { ClassSerializerInterceptor, ValidationPipe, VersioningType } from '@nestjs/common';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'verbose', 'debug'],
+  });
+
+  app.enableVersioning({
+    type: VersioningType.URI, // options: URI, HEADER, MEDIA_TYPE
+    defaultVersion: '1',
   });
 
   // ✅ Enable global serialization
@@ -25,7 +30,17 @@ async function bootstrap() {
     .setTitle('PRACTICE API')
     .setDescription('API documentation for my NestJS project')
     .setVersion('1.0')
-    .addBearerAuth()
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'Authorization',
+        description: 'Enter JWT token (without Bearer prefix)',
+        in: 'header',
+      },
+      'access-token', // name can be anything
+    )
     .addGlobalResponse({
       status: 500,
       description: 'Internal server error',
