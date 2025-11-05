@@ -1,16 +1,17 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsPositive, Min, IsString } from 'class-validator';
+import { IsInt, IsOptional, IsPositive, Min } from 'class-validator';
+import { DEFAULT_LIMIT, DEFAULT_OFFSET } from '../constants/pagination.constant';
 
 export class PaginationQueryDto {
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(0)
-  offset?: number = 0; // starting index
+  offset?: number = DEFAULT_OFFSET; // starting index
 
   @IsOptional()
   @Type(() => Number)
   @IsInt()
   @IsPositive()
-  limit?: number = 10; // number of items per page
+  limit?: number = DEFAULT_LIMIT; // number of items per page
 }

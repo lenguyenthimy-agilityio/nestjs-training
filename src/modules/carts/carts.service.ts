@@ -11,7 +11,8 @@ import { plainToInstance } from 'class-transformer';
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { PaginationMeta } from '../../common/interfaces/pagination-meta.interface';
 import { CacheHelperService } from '../../common/cache/cache-helper.service';
-import { CACHE_TTL } from '../../common/cache/constant';
+import { CACHE_TTL } from '../../common/constants/cache.constant';
+import { ERROR_MESSAGE } from '../../common/constants/error.constant';
 
 @Injectable()
 export class CartsService {
@@ -33,7 +34,7 @@ export class CartsService {
     const { productId, quantity } = dto;
 
     const product = await this.productRepo.findOne({ where: { id: productId } });
-    if (!product) throw new NotFoundException('Product not found');
+    if (!product) throw new NotFoundException(ERROR_MESSAGE.PRODUCT_NOT_FOUND(productId));
 
     let cart = await this.cartRepo.findOne({
       where: { user: { id: user.id } },
@@ -81,12 +82,12 @@ export class CartsService {
     });
 
     if (!item) {
-      throw new NotFoundException('Cart item not found');
+      throw new NotFoundException(ERROR_MESSAGE.CART_ITEM_NOT_FOUND);
     }
 
     // Ensure item belongs to this user
     if (item.cart.user.id !== user.id) {
-      throw new ForbiddenException('You do not have permission to access this resource');
+      throw new ForbiddenException(ERROR_MESSAGE.PERMISSION_DENIED);
     }
 
     await this.cartItemRepo.remove(item);

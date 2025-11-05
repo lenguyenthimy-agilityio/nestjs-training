@@ -19,8 +19,9 @@ export class CacheHelperService {
     return value ? (JSON.parse(value) as T) : null;
   }
 
-  async del(key: string): Promise<void> {
-    await this.redisClient.del(key);
+  async del(key: string): Promise<number> {
+    const result = await this.redisClient.del(key);
+    return result;
   }
 
   /**

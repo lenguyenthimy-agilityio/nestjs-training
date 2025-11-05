@@ -6,7 +6,8 @@ import { CreateProductDto } from './dto/create-product.dto';
 import { GetProductsDto } from './dto/get-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { CacheHelperService } from '../../common/cache/cache-helper.service';
-import { CACHE_TTL } from '../../common/cache/constant';
+import { CACHE_TTL } from '../../common/constants/cache.constant';
+import { ERROR_MESSAGE } from '../../common/constants/error.constant';
 
 @Injectable()
 export class ProductsService {
@@ -26,7 +27,7 @@ export class ProductsService {
       where: { name: dto.name },
     });
     if (existing) {
-      throw new ConflictException('Product with this name already exists');
+      throw new ConflictException(ERROR_MESSAGE.PRODUCT_EXISTED);
     }
 
     const product = this.productRepository.create(dto);
@@ -83,7 +84,7 @@ export class ProductsService {
 
     const product = await this.productRepository.findOne({ where: { id } });
     if (!product) {
-      throw new NotFoundException(`Product with id ${id} not found`);
+      throw new NotFoundException(ERROR_MESSAGE.PRODUCT_NOT_FOUND(id));
     }
 
     await this.cacheHelper.set(cacheKey, product, CACHE_TTL);
@@ -93,7 +94,7 @@ export class ProductsService {
   async update(id: string, updateProductDto: UpdateProductDto): Promise<Product> {
     const product = await this.productRepository.findOne({ where: { id } });
     if (!product) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
+      throw new NotFoundException(ERROR_MESSAGE.PRODUCT_NOT_FOUND(id));
     }
 
     Object.assign(product, updateProductDto);
@@ -109,7 +110,7 @@ export class ProductsService {
   async delete(id: string): Promise<void> {
     const product = await this.productRepository.findOne({ where: { id } });
     if (!product) {
-      throw new NotFoundException(`Product with ID ${id} not found`);
+      throw new NotFoundException(ERROR_MESSAGE.PRODUCT_NOT_FOUND(id));
     }
 
     await this.productRepository.remove(product);

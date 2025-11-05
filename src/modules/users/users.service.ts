@@ -6,6 +6,7 @@ import { Role } from '../users/enums/role.enum';
 import { SignupDto } from '../auth/dto/signup.dto';
 import { UpdateUserRoleDto } from '../users/dto/update-user-role.dto';
 import * as bcrypt from 'bcrypt';
+import { ERROR_MESSAGE } from '../../common/constants/error.constant';
 
 @Injectable()
 export class UsersService {
@@ -24,7 +25,7 @@ export class UsersService {
     const { email, password } = dto;
     const existing = await this.findByEmail(email);
     if (existing) {
-      throw new ConflictException('Email already exists');
+      throw new ConflictException(ERROR_MESSAGE.USER_EXISTED);
     }
 
     const salt = await bcrypt.genSalt();
@@ -41,7 +42,7 @@ export class UsersService {
 
   async updateRole(id: string, dto: UpdateUserRoleDto): Promise<User> {
     const user = await this.usersRepository.findOne({ where: { id } });
-    if (!user) throw new NotFoundException(`User with ID ${id} not found`);
+    if (!user) throw new NotFoundException(ERROR_MESSAGE.USER_NOT_FOUND(id));
 
     user.role = dto.role;
     await this.usersRepository.save(user);
