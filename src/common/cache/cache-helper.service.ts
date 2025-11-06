@@ -1,8 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import Redis from 'ioredis';
 
 @Injectable()
 export class CacheHelperService {
+  private readonly logger = new Logger(CacheHelperService.name);
+
   constructor(@Inject('REDIS_CLIENT') private readonly redisClient: Redis) {}
 
   async set(key: string, value: any, ttlSeconds?: number) {
@@ -30,11 +32,11 @@ export class CacheHelperService {
   async deleteByPattern(pattern: string): Promise<void> {
     const keys = await this.redisClient.keys(pattern);
     if (keys.length === 0) {
-      console.log(`[CACHE] No keys matched pattern: ${pattern}`);
+      this.logger.log(`[CACHE] No keys matched pattern: ${pattern}`);
       return;
     }
     await this.redisClient.del(...keys);
-    console.log(`[CACHE] Deleted ${keys.length} keys matching: ${pattern}`);
+    this.logger.log(`[CACHE] Deleted ${keys.length} keys matching: ${pattern}`);
   }
 
   async keys(pattern = '*'): Promise<string[]> {

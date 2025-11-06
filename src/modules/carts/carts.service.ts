@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Cart } from './entities/cart.entity';
@@ -16,6 +16,8 @@ import { ERROR_MESSAGE } from '../../common/constants/error.constant';
 
 @Injectable()
 export class CartsService {
+  private readonly logger = new Logger(CartsService.name);
+
   constructor(
     @InjectRepository(Cart)
     private readonly cartRepo: Repository<Cart>,
@@ -109,7 +111,7 @@ export class CartsService {
     }>(cacheKey);
 
     if (cached) {
-      console.log(`Returning cart items for user ${user.id} from cache`);
+      this.logger.log(`Returning cart items for user ${user.id} from cache`);
       return cached;
     }
 
@@ -142,7 +144,7 @@ export class CartsService {
 
     const result = { data, pagination: { total, limit, offset } };
 
-    console.log(`Returning cart items for user ${user.id} from database`);
+    this.logger.log(`Returning cart items for user ${user.id} from database`);
 
     // Cache the result for CACHE_TTL seconds
     await this.cacheHelper.set(cacheKey, result, CACHE_TTL);

@@ -1,4 +1,4 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Like, Repository } from 'typeorm';
 import { Product } from './entities/product.entity';
@@ -11,6 +11,8 @@ import { ERROR_MESSAGE } from '../../common/constants/error.constant';
 
 @Injectable()
 export class ProductsService {
+  private readonly logger = new Logger(ProductsService.name);
+
   constructor(
     @InjectRepository(Product)
     private readonly productRepository: Repository<Product>,
@@ -50,7 +52,7 @@ export class ProductsService {
       offset: number;
     }>(cacheKey);
     if (cached) {
-      console.log('Returning products from cache');
+      this.logger.log('Returning products from cache');
       return cached;
     }
 
@@ -68,7 +70,7 @@ export class ProductsService {
 
     await this.cacheHelper.set(cacheKey, result, CACHE_TTL);
 
-    console.log('Returning products from database');
+    this.logger.log('Returning products from database');
     return result;
   }
 
@@ -78,7 +80,7 @@ export class ProductsService {
     // Try cache first
     const cached = await this.cacheHelper.get<Product>(cacheKey);
     if (cached) {
-      console.log(`Returning product ${id} from cache`);
+      this.logger.log(`Returning product ${id} from cache`);
       return cached;
     }
 
