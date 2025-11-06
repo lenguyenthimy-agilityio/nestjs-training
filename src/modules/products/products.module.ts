@@ -12,6 +12,5 @@ import { AuthModule } from '../auth/auth.module'; // ✅ Needed for JwtAuthGuard
   ],
   controllers: [ProductsController],
   providers: [ProductsService],
-  exports: [ProductsService], // optional, if used elsewhere
 })
 export class ProductsModule {}

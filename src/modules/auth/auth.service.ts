@@ -32,6 +32,7 @@ export class AuthService {
 
   async signUp(dto: SignupDto): Promise<User> {
     const user = await this.usersService.create(dto);
+    // handle jwt return if needed
     return user;
   }
 

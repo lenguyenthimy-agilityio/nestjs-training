@@ -27,8 +27,10 @@ export class CartsController {
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 404, description: 'Product not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized – Missing or invalid token' })
+  // @SerializeOptions({ type: CartItemResponseDto })
   async addItem(@Req() req, @Body() dto: AddCartItemDto) {
     const user = req.user as User;
+    // return instance of CartItemResponseDto
     return this.cartsService.addItem(user, dto);
   }
 

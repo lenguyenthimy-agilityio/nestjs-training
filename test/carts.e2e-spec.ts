@@ -18,6 +18,7 @@ describe('Carts (e2e)', () => {
     const setup = await createTestingApp();
     app = setup.app;
     redisClient = setup.redisClient;
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
     server = app.getHttpServer();
     dataSource = app.get(DataSource);
 
@@ -30,7 +31,7 @@ describe('Carts (e2e)', () => {
       .post('/auth/signin')
       .send({ email: 'john@example.com', password: 'Abcd@1234' });
 
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-member-access
     accessToken = loginRes.body.access_token;
 
     // Create a product
