@@ -1,11 +1,10 @@
-import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
 import { Role } from '../users/enums/role.enum';
 import { SignupDto } from '../auth/dto/signup.dto';
 import { UpdateUserRoleDto } from '../users/dto/update-user-role.dto';
-import * as bcrypt from 'bcrypt';
 import { ERROR_MESSAGE } from '../../common/constants/error.constant';
 
 @Injectable()
@@ -13,6 +12,12 @@ export class UsersService {
   constructor(
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
+
+    @Inject('HASH_PROVIDER')
+    private readonly hashProvider: {
+      hash(password: string): Promise<string>;
+      compare(password: string, hashed: string): Promise<boolean>;
+    },
   ) {}
 
   // Find user by email
@@ -28,8 +33,7 @@ export class UsersService {
       throw new ConflictException(ERROR_MESSAGE.USER_EXISTED);
     }
 
-    const salt = await bcrypt.genSalt();
-    const hashed = await bcrypt.hash(password, salt);
+    const hashed = await this.hashProvider.hash(password);
 
     const user = this.usersRepository.create({
       email: email,

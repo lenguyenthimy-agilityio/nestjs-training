@@ -44,7 +44,8 @@ describe('Users (e2e) - Update Role', () => {
       .send({ email: 'user@example.com', password: 'Abcd@1234' })
       .expect(201);
 
-    normalUserId = userRes.body.id;
+    const userEntity = await userRepo.findOne({ where: { email: 'user@example.com' } });
+    normalUserId = userEntity!.id;
   });
 
   afterAll(async () => {

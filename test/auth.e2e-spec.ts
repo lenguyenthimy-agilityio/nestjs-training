@@ -22,8 +22,7 @@ describe('Auth E2E (SQLite)', () => {
     // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     const res = await request(app.getHttpServer()).post('/auth/signup').send(user).expect(201);
 
-    expect(res.body).toHaveProperty('email', user.email);
-    expect(res.body).not.toHaveProperty('password'); // @Exclude() should hide password
+    expect(res.body).toHaveProperty('access_token');
   });
 
   it('should not allow duplicate email', async () => {

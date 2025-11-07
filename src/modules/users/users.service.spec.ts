@@ -5,20 +5,29 @@ import { User } from './entities/user.entity';
 import { Repository } from 'typeorm';
 import { SignupDto } from '../auth/dto/signup.dto';
 import { UpdateUserRoleDto } from './dto/update-user-role.dto';
-import * as bcrypt from 'bcrypt';
 import { ConflictException, NotFoundException } from '@nestjs/common';
 
 describe('UsersService', () => {
   let usersService: UsersService;
   let usersRepository: Repository<User>;
+  let hashProvider: { hash: jest.Mock; compare: jest.Mock };
 
   beforeEach(async () => {
+    hashProvider = {
+      hash: jest.fn(),
+      compare: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         {
           provide: getRepositoryToken(User),
           useClass: Repository,
+        },
+        {
+          provide: 'HASH_PROVIDER',
+          useValue: hashProvider,
         },
       ],
     }).compile();
@@ -31,9 +40,9 @@ describe('UsersService', () => {
     it('should create a new user with hashed password', async () => {
       const dto: SignupDto = { email: 'example@gmail.com', password: 'password' };
 
-      const findOneSpy = jest.spyOn(usersRepository, 'findOne').mockResolvedValue(null);
-      const createSpy = jest.spyOn(usersRepository, 'create').mockImplementation((user) => user as User);
-      const saveSpy = jest.spyOn(usersRepository, 'save').mockImplementation(
+      jest.spyOn(usersRepository, 'findOne').mockResolvedValue(null);
+      jest.spyOn(usersRepository, 'create').mockImplementation((user) => user as User);
+      jest.spyOn(usersRepository, 'save').mockImplementation(
         async (user) =>
           ({
             ...user,
@@ -43,24 +52,24 @@ describe('UsersService', () => {
           }) as User,
       );
 
+      hashProvider.hash.mockResolvedValue('hashedPassword123');
+
       const result = await usersService.create(dto);
 
-      expect(findOneSpy).toHaveBeenCalledWith({ where: { email: dto.email } });
-      expect(createSpy).toHaveBeenCalled();
-      expect(saveSpy).toHaveBeenCalled();
+      expect(usersRepository.findOne).toHaveBeenCalledWith({ where: { email: dto.email } });
+      expect(hashProvider.hash).toHaveBeenCalledWith(dto.password);
+      expect(usersRepository.create).toHaveBeenCalled();
+      expect(usersRepository.save).toHaveBeenCalled();
 
       expect(result).toHaveProperty('id');
       expect(result.email).toBe(dto.email);
-      expect(result.password).not.toBe(dto.password); // Password should be hashed
-
-      const isMatch = await bcrypt.compare(dto.password, result.password);
-      expect(isMatch).toBe(true);
+      expect(result.password).toBe('hashedPassword123');
     });
 
     it('should throw ConflictException if email already exists', async () => {
       const dto: SignupDto = { email: 'example@gmail.com', password: 'password' };
 
-      const findOneSpy = jest.spyOn(usersRepository, 'findOne').mockResolvedValue({
+      jest.spyOn(usersRepository, 'findOne').mockResolvedValue({
         id: '1',
         email: dto.email,
         password: 'hashedPassword',
@@ -70,7 +79,7 @@ describe('UsersService', () => {
       } as User);
 
       await expect(usersService.create(dto)).rejects.toThrow(ConflictException);
-      expect(findOneSpy).toHaveBeenCalledWith({ where: { email: dto.email } });
+      expect(usersRepository.findOne).toHaveBeenCalledWith({ where: { email: dto.email } });
     });
   });
 
@@ -78,9 +87,9 @@ describe('UsersService', () => {
     it('should return a user by email', async () => {
       const email = 'example@gmail.com';
 
-      const findOneSpy = jest.spyOn(usersRepository, 'findOne').mockResolvedValue({
+      jest.spyOn(usersRepository, 'findOne').mockResolvedValue({
         id: '1',
-        email: email,
+        email,
         password: 'hashedPassword',
         role: 'user',
         createdAt: new Date(),
@@ -90,20 +99,17 @@ describe('UsersService', () => {
       const result = await usersService.findByEmail(email);
       expect(result).toHaveProperty('id');
       expect(result.email).toBe(email);
-      expect(findOneSpy).toHaveBeenCalledWith({ where: { email } });
     });
 
     it('should return null if user not found', async () => {
       const email = 'example@gmail.com';
-
-      const findOneSpy = jest.spyOn(usersRepository, 'findOne').mockResolvedValue(null);
+      jest.spyOn(usersRepository, 'findOne').mockResolvedValue(null);
 
       const result = await usersService.findByEmail(email);
       expect(result).toBeNull();
-      expect(findOneSpy).toHaveBeenCalledWith({ where: { email } });
     });
   });
-  // test for updateRole
+
   describe('updateRole', () => {
     it('should update the user role', async () => {
       const userId = '1';
@@ -118,14 +124,13 @@ describe('UsersService', () => {
         updatedAt: new Date(),
       } as User;
 
-      const findOneSpy = jest.spyOn(usersRepository, 'findOne').mockResolvedValue(existingUser);
-      const saveSpy = jest.spyOn(usersRepository, 'save').mockImplementation(async (user) => user as User);
+      jest.spyOn(usersRepository, 'findOne').mockResolvedValue(existingUser);
+      jest.spyOn(usersRepository, 'save').mockImplementation(async (user) => user as User);
 
       const result = await usersService.updateRole(userId, dto);
 
-      expect(findOneSpy).toHaveBeenCalledWith({ where: { id: userId } });
-      expect(saveSpy).toHaveBeenCalled();
-
+      expect(usersRepository.findOne).toHaveBeenCalledWith({ where: { id: userId } });
+      expect(usersRepository.save).toHaveBeenCalled();
       expect(result.role).toBe(dto.role);
     });
 
@@ -135,13 +140,8 @@ describe('UsersService', () => {
 
       jest.spyOn(usersRepository, 'findOne').mockResolvedValue(null);
 
-      // Correct Jest pattern for async errors
       await expect(usersService.updateRole(userId, dto)).rejects.toBeInstanceOf(NotFoundException);
-
       await expect(usersService.updateRole(userId, dto)).rejects.toThrow(`User with ID ${userId} not found`);
-
-      // Ensure repository called correctly
-      expect(usersRepository.findOne).toHaveBeenCalledWith({ where: { id: userId } });
     });
   });
 

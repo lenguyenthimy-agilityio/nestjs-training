@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
@@ -12,6 +12,12 @@ export class AuthService {
   constructor(
     private readonly usersService: UsersService,
     private readonly jwtService: JwtService,
+
+    @Inject('HASH_PROVIDER')
+    private readonly hashProvider: {
+      hash(password: string): Promise<string>;
+      compare(password: string, hashed: string): Promise<boolean>;
+    },
   ) {}
 
   // Validate for LocalStrategy
@@ -19,7 +25,7 @@ export class AuthService {
     const user = await this.usersService.findByEmail(email);
     if (!user) return null;
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await this.hashProvider.compare(password, user.password);
     if (!isMatch) return null;
 
     // Don’t return password hash

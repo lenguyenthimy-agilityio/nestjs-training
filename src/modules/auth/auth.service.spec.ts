@@ -1,19 +1,26 @@
-// help create tests for auth.service.ts
-
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
 import { JwtService } from '@nestjs/jwt';
 import { SignupDto } from './dto/signup.dto';
 import { User } from '../users/entities/user.entity';
-import * as bcrypt from 'bcrypt';
+import { Role } from '../users/enums/role.enum';
 
 describe('AuthService', () => {
   let authService: AuthService;
   let usersService: UsersService;
   let jwtService: JwtService;
+  let hashProvider: {
+    hash: jest.Mock;
+    compare: jest.Mock;
+  };
 
   beforeEach(async () => {
+    hashProvider = {
+      hash: jest.fn(),
+      compare: jest.fn(),
+    };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -30,6 +37,10 @@ describe('AuthService', () => {
             signAsync: jest.fn(),
           },
         },
+        {
+          provide: 'HASH_PROVIDER',
+          useValue: hashProvider, // 👈 mock injected provider
+        },
       ],
     }).compile();
 
@@ -45,16 +56,18 @@ describe('AuthService', () => {
         id: '1',
         email: dto.email,
         password: 'hashedPassword',
-        role: 'user',
+        role: Role.USER,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       jest.spyOn(usersService, 'create').mockResolvedValue(user);
+      jest.spyOn(jwtService, 'signAsync').mockResolvedValue('jwtToken');
 
       const result = await authService.signUp(dto);
-      expect(result).toHaveProperty('access_token');
+
       expect(usersService.create).toHaveBeenCalledWith(dto);
+      expect(result).toHaveProperty('access_token', 'jwtToken');
     });
   });
 
@@ -64,7 +77,7 @@ describe('AuthService', () => {
         id: '1',
         email: 'example@gmail.com',
         password: 'hashedPassword',
-        role: 'user',
+        role: Role.USER,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -74,7 +87,11 @@ describe('AuthService', () => {
 
       const result = await authService.signIn(user);
       expect(result).toEqual({ access_token: token });
-      expect(jwtService.signAsync).toHaveBeenCalledWith({ email: user.email, sub: user.id, role: user.role });
+      expect(jwtService.signAsync).toHaveBeenCalledWith({
+        email: user.email,
+        sub: user.id,
+        role: user.role,
+      });
     });
   });
 
@@ -82,17 +99,17 @@ describe('AuthService', () => {
     it('should return user if credentials are valid', async () => {
       const email = 'example@gmail.com';
       const password = 'password';
-      const hashedPassword = await bcrypt.hash(password, 10);
       const user: User = {
         id: '1',
-        email: email,
-        role: 'user',
-        password: hashedPassword,
+        email,
+        role: Role.USER,
+        password: 'hashedPassword',
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       jest.spyOn(usersService, 'findByEmail').mockResolvedValue(user);
+      hashProvider.compare.mockResolvedValue(true); // ✅ mock successful compare
 
       const result = await authService.validateUser(email, password);
       expect(result).toEqual({
@@ -120,13 +137,14 @@ describe('AuthService', () => {
       const user: User = {
         id: '1',
         email,
-        password: await bcrypt.hash('wrongPassword', 10),
-        role: 'user',
+        password: 'hashedPassword',
+        role: Role.USER,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
 
       jest.spyOn(usersService, 'findByEmail').mockResolvedValue(user);
+      hashProvider.compare.mockResolvedValue(false);
 
       const result = await authService.validateUser(email, password);
       expect(result).toBeNull();
