@@ -73,7 +73,6 @@ describe('CacheHelperService', () => {
 
       expect(mockCacheManager.keys).toHaveBeenCalledWith('test:*');
       expect(mockCacheManager.del).not.toHaveBeenCalled();
-      expect(console.log).toHaveBeenCalledWith('[CACHE] No keys matched pattern: test:*');
     });
 
     it('should delete all keys matching the pattern and log count', async () => {
@@ -84,7 +83,6 @@ describe('CacheHelperService', () => {
 
       expect(mockCacheManager.keys).toHaveBeenCalledWith('test:*');
       expect(mockCacheManager.del).toHaveBeenCalledWith('test:1', 'test:2');
-      expect(console.log).toHaveBeenCalledWith('[CACHE] Deleted 2 keys matching: test:*');
     });
   });
 

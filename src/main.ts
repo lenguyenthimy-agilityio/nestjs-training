@@ -2,6 +2,7 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { ClassSerializerInterceptor, ValidationPipe, VersioningType } from '@nestjs/common';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
@@ -17,7 +18,7 @@ async function bootstrap() {
   // @Exclude() decorator usage in entities/DTOs
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
-  // ✅ Enable global validation
+  // Enable global validation
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true, // Strip unknown properties
@@ -25,6 +26,9 @@ async function bootstrap() {
       transform: true, // Auto-transform payloads to DTOs
     }),
   );
+
+  // Enable global exception filter
+  app.useGlobalFilters(new AllExceptionsFilter());
 
   const config = new DocumentBuilder()
     .setTitle('PRACTICE API')

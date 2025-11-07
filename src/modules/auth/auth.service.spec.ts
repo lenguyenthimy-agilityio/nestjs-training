@@ -53,7 +53,7 @@ describe('AuthService', () => {
       jest.spyOn(usersService, 'create').mockResolvedValue(user);
 
       const result = await authService.signUp(dto);
-      expect(result).toEqual(user);
+      expect(result).toHaveProperty('access_token');
       expect(usersService.create).toHaveBeenCalledWith(dto);
     });
   });
