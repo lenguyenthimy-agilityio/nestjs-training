@@ -1,4 +1,16 @@
-import { Controller, Post, Body, Req, HttpCode, HttpStatus, Delete, Param, Get, Query } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Req,
+  HttpCode,
+  HttpStatus,
+  Delete,
+  Param,
+  Get,
+  Query,
+  SerializeOptions,
+} from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { CartsService } from './carts.service';
 import { AddCartItemDto } from './dto/add-cart-item.dto';
@@ -27,10 +39,9 @@ export class CartsController {
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 404, description: 'Product not found' })
   @ApiResponse({ status: 401, description: 'Unauthorized – Missing or invalid token' })
-  // @SerializeOptions({ type: CartItemResponseDto })
+  @SerializeOptions({ type: CartItemResponseDto })
   async addItem(@Req() req, @Body() dto: AddCartItemDto) {
     const user = req.user as User;
-    // return instance of CartItemResponseDto
     return this.cartsService.addItem(user, dto);
   }
 

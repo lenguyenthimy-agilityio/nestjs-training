@@ -63,18 +63,14 @@ export class CartsService {
     // Invalidate cart caches for this user
     await this.cacheHelper.deleteByPattern(`cart:${user.id}:items:*`);
 
-    return plainToInstance(
-      CartItemResponseDto,
-      {
-        id: savedItem.id,
-        userId: user.id,
-        productId: product.id,
-        quantity: savedItem.quantity,
-        createdAt: savedItem.createdAt,
-        updatedAt: savedItem.updatedAt,
-      },
-      { excludeExtraneousValues: true },
-    );
+    return new CartItemResponseDto({
+      id: savedItem.id,
+      userId: user.id,
+      productId: product.id,
+      quantity: savedItem.quantity,
+      createdAt: savedItem.createdAt,
+      updatedAt: savedItem.updatedAt,
+    });
   }
 
   async removeItem(user: User, cartItemId: string): Promise<void> {
@@ -129,17 +125,16 @@ export class CartsService {
       take: limit,
     });
 
-    const data = plainToInstance(
-      CartItemResponseDto,
-      items.map((item) => ({
-        id: item.id,
-        userId: user.id,
-        productId: item.product.id,
-        quantity: item.quantity,
-        createdAt: item.createdAt,
-        updatedAt: item.updatedAt,
-      })),
-      { excludeExtraneousValues: true },
+    const data = items.map(
+      (item) =>
+        new CartItemResponseDto({
+          id: item.id,
+          userId: user.id,
+          productId: item.product.id,
+          quantity: item.quantity,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt,
+        }),
     );
 
     const result = { data, pagination: { total, limit, offset } };

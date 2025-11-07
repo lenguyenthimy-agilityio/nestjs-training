@@ -25,4 +25,8 @@ export class CartItemResponseDto {
   @Expose()
   @ApiProperty({ example: '2025-10-28T20:30:18.542Z', description: 'Last update timestamp (ISO string)' })
   updatedAt: Date;
+
+  constructor(partial: Partial<CartItemResponseDto>) {
+    Object.assign(this, partial);
+  }
 }
