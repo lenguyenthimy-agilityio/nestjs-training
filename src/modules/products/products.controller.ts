@@ -19,6 +19,7 @@ import { Role } from '../users/enums/role.enum';
 import { GetProductsDto } from './dto/get-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { Product } from './entities/product.entity';
+import { ParseUUIDCustomPipe } from '../../common/pipes/parse-uuid-custom.pipe';
 
 @ApiTags('Products')
 @ApiBearerAuth('access-token')
@@ -95,7 +96,7 @@ export class ProductsController {
   })
   @ApiNotFoundResponse({ description: 'Product not found.' })
   @ApiForbiddenResponse({ description: 'Only Admin users can view product details.' })
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUUIDCustomPipe) id: string) {
     return this.productsService.findOne(id);
   }
 
@@ -117,7 +118,7 @@ export class ProductsController {
   })
   @ApiNotFoundResponse({ description: 'Product not found.' })
   @ApiForbiddenResponse({ description: 'Only Admin users can update products.' })
-  async update(@Param('id') id: string, @Body() dto: UpdateProductDto) {
+  async update(@Param('id', ParseUUIDCustomPipe) id: string, @Body() dto: UpdateProductDto) {
     return this.productsService.update(id, dto);
   }
 
@@ -136,7 +137,7 @@ export class ProductsController {
   @ApiNoContentResponse({ description: 'Product successfully deleted.' })
   @ApiNotFoundResponse({ description: 'Product not found.' })
   @ApiForbiddenResponse({ description: 'Only Admin users can delete products.' })
-  async delete(@Param('id') id: string) {
+  async delete(@Param('id', ParseUUIDCustomPipe) id: string) {
     await this.productsService.delete(id);
   }
 }
