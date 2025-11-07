@@ -30,10 +30,11 @@ export class AuthService {
     return result as User;
   }
 
-  async signUp(dto: SignupDto): Promise<User> {
+  async signUp(dto: SignupDto): Promise<{ access_token: string }> {
     const user = await this.usersService.create(dto);
-    // handle jwt return if needed
-    return user;
+    // Immediately generate a token for auto-login
+    const { access_token } = await this.signIn(user);
+    return { access_token: access_token };
   }
 
   async signIn(user: User) {

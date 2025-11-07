@@ -18,9 +18,17 @@ export class AuthController {
   @Public()
   @Post('signup')
   @ApiOperation({ summary: 'Register a new user' })
-  @ApiResponse({ status: 201, description: 'User registered successfully', type: User })
+  @ApiResponse({
+    status: 201,
+    description: 'User registered successfully',
+    schema: {
+      example: {
+        access_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+      },
+    },
+  })
   @ApiResponse({ status: 409, description: 'Email already exists' })
-  async signUp(@Body() signUpDto: SignupDto): Promise<User> {
+  async signUp(@Body() signUpDto: SignupDto): Promise<{ access_token: string }> {
     return this.authService.signUp(signUpDto);
   }
 
